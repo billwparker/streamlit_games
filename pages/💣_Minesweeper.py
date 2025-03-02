@@ -202,6 +202,7 @@ if 'minesweeper_game' not in st.session_state:
     st.session_state.minesweeper_game = None
     st.session_state.difficulty = "beginner"  # Default difficulty
     st.session_state.last_refresh_time = time.time()
+    st.session_state.show_rules = False  # Default rules visibility
 
 def create_new_game(difficulty):
     """Create a new game with the specified difficulty"""
@@ -301,22 +302,6 @@ def main():
     if st.sidebar.button("New Game", use_container_width=True):
         create_new_game(difficulty.lower())
     
-    
-    # Instructions and information
-    with st.expander("How to play Minesweeper"):
-        st.markdown("""
-        ### Rules
-        1. The goal is to reveal all cells without mines.
-        2. Numbers show how many mines are adjacent to that cell.
-        3. Use flags to mark cells you think contain mines.
-        4. If you reveal a mine, the game is over!
-        
-        ### Strategy Tips
-        - Start by clicking in the middle of the board.
-        - If you reveal a "0" cell, all adjacent cells will be revealed automatically.
-        - Use the chord action (click on a number) to quickly reveal adjacent cells when all mines are flagged.
-        """)
-    
     # Initialize game if needed
     if st.session_state.minesweeper_game is None:
         create_new_game(difficulty.lower())
@@ -341,7 +326,7 @@ def main():
             else:
                 st.error("Game Over! 💥")
     
-    # Add debug info in expander
+    # Add game info in expander
     with st.expander("Game Info", expanded=False):
         st.write(f"Game Active: {'No' if game.game_over else 'Yes'}")
         st.write(f"First Move: {'Yes' if game.first_move else 'No'}")
@@ -365,6 +350,25 @@ def main():
             cols = st.columns(game.cols)
             for col_idx, col in enumerate(cols):
                 render_cell(col, row_idx, col_idx, game)
+    
+    # Add Rules to the sidebar bottom
+    st.sidebar.markdown("---")
+    show_rules = st.sidebar.checkbox("Show Rules", value=st.session_state.show_rules)
+    st.session_state.show_rules = show_rules
+    
+    if show_rules:
+        st.sidebar.markdown("""
+        ### Rules
+        1. The goal is to reveal all cells without mines.
+        2. Numbers show how many mines are adjacent to that cell.
+        3. Use flags to mark cells you think contain mines.
+        4. If you reveal a mine, the game is over!
+        
+        ### Strategy Tips
+        - Start by clicking in the middle of the board.
+        - If you reveal a "0" cell, all adjacent cells will be revealed automatically.
+        - Use the chord action (click on a number) to quickly reveal adjacent cells when all mines are flagged.
+        """)
     
     # Handle autorefresh logic
     st.session_state.last_refresh_time = current_time
