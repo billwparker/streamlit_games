@@ -11,3 +11,7 @@ venv.bak/
 .streamlit/
 
 notes.py
+main.py
+version.py
+
+
