@@ -1,3 +1,8 @@
+"""
+Game state management for Streamlit games.
+Provides functions to save and load game state between sessions.
+"""
+
 import os
 import json
 import time
