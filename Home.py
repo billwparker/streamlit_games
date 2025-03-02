@@ -13,14 +13,6 @@ st.markdown("""
             
 Select a game from the sidebar to start playing!
 
-## Current Games:
-* **Asteroids** - Navigate a spaceship through an asteroid field
-
-## Coming Soon:
-* Snake
-* Tetris
-* Pong
-
 This project demonstrates how to build interactive games using Streamlit.
 """)
 

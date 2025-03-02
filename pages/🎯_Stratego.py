@@ -173,7 +173,6 @@ class GameState:
     ai_think_start_time: float = 0
     player_pieces_to_place: Dict[str, int] = None
     ai_pieces_placed: bool = False
-    debug_log: List[str] = None  # Add debug log
     last_move: Dict = None  # Store info about the last move
     battle_log: List[Dict] = None  # Store battle results
     
@@ -182,19 +181,10 @@ class GameState:
             self.revealed_pieces = {}
         if self.player_pieces_to_place is None:
             self.player_pieces_to_place = INITIAL_PIECES.copy()
-        if self.debug_log is None:
-            self.debug_log = []
         if self.last_move is None:
             self.last_move = {}
         if self.battle_log is None:
             self.battle_log = []
-
-    def add_log(self, message):
-        """Add a message to the debug log"""
-        timestamp = time.strftime("%H:%M:%S")
-        self.debug_log.append(f"[{timestamp}] {message}")
-        if len(self.debug_log) > 10:  # Keep log size manageable
-            self.debug_log.pop(0)
 
     def get_piece(self, pos):
         row, col = pos
@@ -211,13 +201,9 @@ class GameState:
         from_row, from_col = from_pos
         to_row, to_col = to_pos
         
-        # Add detailed logging
-        self.add_log(f"Checking move: ({from_row},{from_col}) to ({to_row},{to_col})")
-        
         # Check if positions are within bounds
         if not (0 <= from_row < BOARD_SIZE and 0 <= from_col < BOARD_SIZE and 
                 0 <= to_row < BOARD_SIZE and 0 <= to_col < BOARD_SIZE):
-            self.add_log("Invalid move: Out of bounds")
             return False
         
         # Get pieces
@@ -226,24 +212,19 @@ class GameState:
         
         # Check if piece exists and belongs to current player
         if not moving_piece:
-            self.add_log("Invalid move: No piece selected")
             return False
             
         if moving_piece.player != self.turn:
-            self.add_log(f"Invalid move: Not your turn (piece player: {moving_piece.player}, current turn: {self.turn})")
             return False
         
         # Check if target is empty or opponent piece
         if target_cell and target_cell.player == self.turn:
-            self.add_log("Invalid move: Cannot move to your own piece")
             return False
         
         # Check if piece can move to destination based on its movement rules
         if not moving_piece.can_move_to(self.board, (from_col, from_row), (to_col, to_row)):
-            self.add_log(f"Invalid move: {moving_piece.name} cannot move to that position")
             return False
             
-        self.add_log(f"Valid move: {moving_piece.name} from ({from_row},{from_col}) to ({to_row},{to_col})")
         return True
     
     def move_piece(self, from_pos, to_pos):
@@ -251,12 +232,8 @@ class GameState:
         from_row, from_col = from_pos
         to_row, to_col = to_pos
         
-        # Add detailed logging
-        self.add_log(f"Moving from ({from_row},{from_col}) to ({to_row},{to_col})")
-        
         # Double-check that this is a valid move
         if not self.is_valid_move(from_pos, to_pos):
-            self.add_log("Move rejected: Invalid move")
             return False
         
         moving_piece = self.get_piece((from_row, from_col))
@@ -272,8 +249,6 @@ class GameState:
         
         # Handle combat if target cell is not empty
         if target_cell:
-            self.add_log(f"Combat: {moving_piece.name}({moving_piece.rank}) vs {target_cell.name}({target_cell.rank})")
-            
             # Create battle report
             battle_result = {
                 "attacker": {
@@ -298,14 +273,12 @@ class GameState:
                 self.board[from_row][from_col] = "⬜"
                 # Reveal winning piece to opponent
                 self.revealed_pieces[(to_row, to_col)] = True
-                self.add_log(f"{moving_piece.name} won")
                 battle_result["winner"] = "attacker"
             else:
                 # Defender wins or tie
                 self.board[from_row][from_col] = "⬜"
                 # Reveal defending piece
                 self.revealed_pieces[(to_row, to_col)] = True
-                self.add_log(f"{target_cell.name} won or tie")
                 battle_result["winner"] = "defender"
             
             # Add battle to the log
@@ -318,23 +291,19 @@ class GameState:
             if target_cell.name == "Flag":
                 self.game_phase = "gameover"
                 self.winner = moving_piece.player
-                self.add_log(f"GAME OVER: Player {moving_piece.player} captured the flag")
                 self.last_move["flag_capture"] = True
         else:
             # Move to empty cell
-            self.add_log(f"Moving {moving_piece.name} to empty cell")
             self.board[to_row][to_col] = self.board[from_row][from_col]
             self.board[from_row][from_col] = "⬜"
         
         # Switch turns
         self.turn = 3 - self.turn  # Toggle between 1 and 2
-        self.add_log(f"Turn changed to Player {self.turn}")
         
         # If next turn is AI, start AI thinking
         if self.turn == 2 and self.game_phase == "play":
             self.ai_thinking = True
             self.ai_think_start_time = time.time()
-            self.add_log("AI thinking started")
         
         self.selected_piece_pos = None
         return True
@@ -476,7 +445,6 @@ if 'stratego_game' not in st.session_state:
     st.session_state.last_refresh = time.time()
     st.session_state.show_rules = False
     st.session_state.selected_piece_type = None
-    st.session_state.show_debug = False
 
 def reset_game():
     # Create empty board
@@ -547,7 +515,6 @@ def render_board(game_state):
                                        help=f"Move to: {piece_info}"):
                         # Direct click handler for valid moves
                         from_row, from_col = game_state.selected_piece_pos
-                        game_state.add_log(f"Moving from ({from_row},{from_col}) to ({row},{col})")
                         # Force the move and immediately rerun - this is key to fixing the issue
                         if game_state.move_piece(game_state.selected_piece_pos, (row, col)):
                             # Force a full rerun to update the UI immediately
@@ -563,9 +530,6 @@ def render_board(game_state):
 
 def handle_cell_click(game_state, row, col):
     """Handle clicks on the game board cells"""
-    # Log the cell click for debugging
-    game_state.add_log(f"Cell clicked: ({row}, {col})")
-    
     # Setup phase - place selected piece
     if game_state.game_phase == "setup":
         if st.session_state.selected_piece_type:
@@ -587,44 +551,33 @@ def handle_cell_click(game_state, row, col):
         if game_state.selected_piece_pos is None:
             if piece and piece.player == 1 and piece.movable:
                 game_state.selected_piece_pos = (row, col)
-                game_state.add_log(f"Selected piece at ({row}, {col}): {piece.name}")
                 st.session_state.last_action = "select"
                 st.rerun()  # Force rerun to update UI and show highlighted piece
             else:
-                if piece:
-                    if piece.player != 1:
-                        game_state.add_log(f"Cannot select opponent's piece at ({row}, {col})")
-                    elif not piece.movable:
-                        game_state.add_log(f"Cannot select immovable piece at ({row}, {col})")
-                else:
-                    game_state.add_log(f"No piece at ({row}, {col}) to select")
+                # Do nothing if clicked on invalid selection
+                pass
         else:
             # If a piece is already selected
             from_row, from_col = game_state.selected_piece_pos
-            from_piece = game_state.get_piece((from_row, from_col))
             
             # If clicked on the same piece, deselect it
             if (row, col) == game_state.selected_piece_pos:
                 game_state.selected_piece_pos = None
-                game_state.add_log(f"Deselected piece at ({row}, {col})")
                 st.session_state.last_action = "deselect"
                 st.rerun()
             # If clicked on another of player's pieces, select that instead
             elif piece and piece.player == 1:
                 game_state.selected_piece_pos = (row, col)
-                game_state.add_log(f"Changed selection to piece at ({row}, {col}): {piece.name}")
                 st.session_state.last_action = "select"
                 st.rerun()
             # If clicked on a valid move destination, move the piece
             elif game_state.is_valid_move(game_state.selected_piece_pos, (row, col)):
                 result = game_state.move_piece(game_state.selected_piece_pos, (row, col))
-                game_state.add_log(f"Move attempt result: {'Success' if result else 'Failed'}")
                 st.session_state.last_action = "move"
                 st.rerun()  # Force rerun to update UI after move
             # If clicked on an invalid destination, deselect
             else:
                 game_state.selected_piece_pos = None
-                game_state.add_log(f"Deselected piece - invalid move to ({row}, {col})")
                 st.session_state.last_action = "deselect"
                 st.rerun()
 
@@ -663,14 +616,14 @@ def render_move_history(game_state):
                 winner = battle["winner"]
                 
                 # Determine player names
-                attacker_name = "You" if attacker["player"] == 1 else "AI"
-                defender_name = "You" if defender["player"] == 1 else "AI"
+                attacker_name = "Your" if attacker["player"] == 1 else "AI"
+                defender_name = "Your" if defender["player"] == 1 else "AI"
                 
                 # Create a rich battle description
                 if winner == "attacker":
                     result_markdown = (
-                        f"{attacker_name}'s {attacker['emoji']} **{attacker['piece']}** "
-                        f"defeated {defender_name}'s {defender['emoji']} **{defender['piece']}**"
+                        f"{attacker_name} {attacker['emoji']} **{attacker['piece']}** "
+                        f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
                     )
                     if attacker["player"] == 1:
                         st.success(result_markdown)
@@ -678,8 +631,8 @@ def render_move_history(game_state):
                         st.error(result_markdown)
                 else:
                     result_markdown = (
-                        f"{defender_name}'s {defender['emoji']} **{defender['piece']}** "
-                        f"defeated {attacker_name}'s {attacker['emoji']} **{attacker['piece']}**"
+                        f"{defender_name} {defender['emoji']} **{defender['piece']}** "
+                        f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
                     )
                     if defender["player"] == 1:
                         st.success(result_markdown)
@@ -694,16 +647,11 @@ def main():
         st.session_state.last_action = None
     
     # Add New Game button prominently at the top
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([3, 1])
     with col2:
         if st.button("🔄 New Game", key="top_new_game", use_container_width=True):
             reset_game()
             st.session_state.last_action = "new_game"
-            st.rerun()
-    
-    with col3:
-        if st.button("🛠️ Debug Mode", key="debug_toggle", use_container_width=True):
-            st.session_state.show_debug = not st.session_state.get('show_debug', False)
             st.rerun()
     
     game_state = st.session_state.stratego_game
@@ -934,21 +882,9 @@ def main():
     # Render move history and battle info in the right column
     with info_container:
         render_move_history(game_state)
-        
-        # Removed the piece rank reference from here (moved to sidebar)
-    
-    # Debug information
-    if st.session_state.get('show_debug', False):
-        with st.expander("Debug Information", expanded=True):
-            st.write(f"Game Phase: {game_state.game_phase}")
-            st.write(f"Current Turn: Player {game_state.turn}")
-            st.write(f"Selected Piece: {game_state.selected_piece_pos}")
-            st.write(f"Last Action: {st.session_state.last_action}")
-            st.write("Game Log:")
-            for log in game_state.debug_log:
-                st.write(f"- {log}")
 
 if __name__ == "__main__":
     main()
+
 
 
