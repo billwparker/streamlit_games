@@ -1,5 +1,5 @@
 import streamlit as st
-import numpy as np
+import numpy np
 import random
 import time
 from dataclasses import dataclass
@@ -271,14 +271,16 @@ class GameState:
                 # Attacker wins
                 self.board[to_row][to_col] = self.board[from_row][from_col]
                 self.board[from_row][from_col] = "⬜"
-                # Reveal winning piece to opponent
-                self.revealed_pieces[(to_row, to_col)] = True
+                # CHANGED: Only explicitly reveal AI pieces when they lose
+                if target_cell.player == 2:
+                    self.revealed_pieces[(to_row, to_col)] = True
                 battle_result["winner"] = "attacker"
             else:
                 # Defender wins or tie
                 self.board[from_row][from_col] = "⬜"
-                # Reveal defending piece
-                self.revealed_pieces[(to_row, to_col)] = True
+                # CHANGED: Only explicitly reveal AI pieces when they lose
+                if moving_piece.player == 2:
+                    self.revealed_pieces[(to_row, to_col)] = True
                 battle_result["winner"] = "defender"
             
             # Add battle to the log
@@ -458,8 +460,19 @@ def reset_game():
     st.session_state.selected_piece_type = None
 
 def render_board(game_state):
+    # Add column headers (A-J) at the top
+    header_cols = st.columns(BOARD_SIZE + 1)  # +1 for the row number column
+    header_cols[0].write("")  # Empty cell for the corner
+    for col in range(BOARD_SIZE):
+        header_cols[col + 1].markdown(f"<div style='text-align: center; font-weight: bold;'>{chr(65 + col)}</div>", unsafe_allow_html=True)
+    
+    # Now render the board with row numbers
     for row in range(BOARD_SIZE):
-        cols = st.columns(BOARD_SIZE)
+        cols = st.columns(BOARD_SIZE + 1)  # +1 for the row number column
+        
+        # Add row number at the start of each row
+        cols[0].markdown(f"<div style='text-align: center; font-weight: bold;'>{row + 1}</div>", unsafe_allow_html=True)
+        
         for col in range(BOARD_SIZE):
             cell = game_state.board[row][col]
             
@@ -467,8 +480,8 @@ def render_board(game_state):
             piece_info = ""
             piece = game_state.get_piece((row, col))
             if piece:
-                # Only show detailed info for player's pieces or revealed opponent pieces
-                if piece.player == 1 or (row, col) in game_state.revealed_pieces:
+                # Only show detailed info for player's pieces or revealed opponent pieces that were defeated
+                if piece.player == 1:
                     piece_info = f"{piece.name} ({piece.rank})"
                     if piece.special:
                         special_abilities = {
@@ -479,20 +492,18 @@ def render_board(game_state):
                 elif piece.player == 0:  # Water
                     piece_info = "Water - Cannot pass through"
             
-            # Handle fog of war - show opponent pieces as unknown unless revealed
-            # Modified to always show AI pieces as unknown regardless of battle outcome
+            # Handle fog of war for AI pieces (always show as unknown)
             if game_state.game_phase == "play" and cell != "⬜" and cell != "🌊":
                 if piece and piece.player == 2:
-                    # Always show AI pieces as unknown to maintain fog of war
-                    # Only exception is if explicitly revealed through battle
-                    if (row, col) not in game_state.revealed_pieces:
-                        cell = "🔍"  # Show unknown piece for opponent
-                        piece_info = "Unknown opponent piece"
+                    # Always show AI pieces as unknown to maintain fog of war,
+                    # Even after battles - never reveal AI pieces
+                    cell = "🔍"  # Show unknown piece for opponent
+                    piece_info = "Unknown opponent piece"
             
             # Highlight selected piece
             if game_state.selected_piece_pos == (row, col):
                 # Use custom styling to highlight the selected piece
-                cols[col].markdown(
+                cols[col + 1].markdown(  # +1 because of the row number column
                     f'<div style="background-color: rgba(255,255,0,0.3); '
                     f'border: 2px solid yellow; border-radius: 5px; padding: 5px; '
                     f'display: flex; justify-content: center; align-items: center; '
@@ -514,7 +525,7 @@ def render_board(game_state):
                 button_key = f"cell_{row}_{col}"
                 if is_valid_move:
                     # For valid moves, use a distinctive background
-                    if cols[col].button(cell, key=button_key, 
+                    if cols[col + 1].button(cell, key=button_key,  # +1 because of the row number column
                                        use_container_width=True, 
                                        help=f"Move to: {piece_info}"):
                         # Direct click handler for valid moves
@@ -526,8 +537,8 @@ def render_board(game_state):
                             st.rerun()
                 else:
                     # On click, select the piece or move to this position
-                    help_text = piece_info if piece_info else f"Row {row+1}, Column {col+1}"
-                    if cols[col].button(cell, key=button_key, 
+                    help_text = piece_info if piece_info else f"Row {row+1}, Column {chr(65+col)}"  # A1, B2, etc.
+                    if cols[col + 1].button(cell, key=button_key,  # +1 because of the row number column
                                        use_container_width=True, 
                                        help=help_text):
                         handle_cell_click(game_state, row, col)
