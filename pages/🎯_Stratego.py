@@ -119,10 +119,10 @@ class GamePiece:
         # Spy can defeat Marshal if spy attacks
         if self.name == "Spy" and other.name == "Marshal":
             return True
-        # Miner can defeat Bomb
-        if self.name == "Miner" and other.name == "Bomb":
-            return True
-        # Higher rank defeats lower rank
+        # FIXED: Only miners can defeat bombs
+        if other.name == "Bomb":
+            return self.name == "Miner"
+        # Higher rank defeats lower rank (for non-bomb pieces)
         return self.rank > other.rank
     
     def can_move_to(self, board, from_pos, to_pos):
@@ -810,6 +810,7 @@ def main():
         elif game_state.game_phase == "gameover":
             if game_state.winner == 1:
                 st.success("**You won!** 🎉")
+                st.balloons()
             else:
                 st.error("**AI won!** Try again?")
         
@@ -885,7 +886,7 @@ def main():
         
         # Show helper text based on game phase
         if game_state.game_phase == "setup":
-            st.info("Place your pieces on the bottom rows of the board. Place the Flag in a safe position!")
+            st.info("Place your pieces on the bottom four rows of the board. Place the Flag in a safe position!")
         elif game_state.game_phase == "play":
             if game_state.turn == 1:
                 st.success("Your turn - Select a piece to move")
