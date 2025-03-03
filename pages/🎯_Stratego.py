@@ -1,5 +1,5 @@
 import streamlit as st
-import numpy np
+import numpy as np
 import random
 import time
 from dataclasses import dataclass
