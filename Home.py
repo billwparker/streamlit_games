@@ -215,16 +215,19 @@ st.markdown("""
 
 Transgressive art intentionally pushes boundaries to provoke a reaction, spark 
 dialogue, and sometimes inspire change. This is commonly seen in works that 
-address political, religious, or social themes where the medium and subject 
-matter combine to challenge the status quo. But it can also be to use a medium not
+address political or social themes where the medium and subject 
+matter combine to challenge the status quo. But transgressive art can 
+also be about using a medium not
 typically associated with a given style simply to disrupt conventional aesthetics or 
 to invite viewers to re-examine their expectations.
 
 Similarly, this project is a form of what we are calling "Transgressive Gaming" to
-demonstrate how to build interactive games in a minimalistic games using Streamlit.
+demonstrate how to build interactive games in a minimalistic and in a almost anti-UX
+pattern.
 
-Each game explores different techniques from ASCII to Emojis and sometimes PyGame 
-for creating interactive experiences within the Streamlit framework.
+Each game here explores different techniques from ASCII to Emojis and sometimes PyGame 
+for creating interactive experiences within the Streamlit framework - a framework not
+typically associated with game development.
 """)
 
 # Add JavaScript to maintain scroll position
