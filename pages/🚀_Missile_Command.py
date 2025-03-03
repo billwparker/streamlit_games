@@ -239,7 +239,7 @@ class GameState:
     cities: List[City] = field(default_factory=list)
     bases: List[Base] = field(default_factory=list)
     player_missiles: List[Missile] = field(default_factory=list)
-    enemy_missiles: List[Missile] = field(default_factory=list)
+    enemy_missiles: List[Missile] = field(default_factory.list)
     explosions: List[Explosion] = field(default_factory=list)
     last_enemy_spawn: float = 0
     enemy_spawn_interval: float = ENEMY_SPAWN_INTERVAL_BASE
@@ -680,11 +680,12 @@ def main():
     with st.sidebar:
         st.header("Game Controls")
         
-        # New Game button - updated to match Minesweeper style
-        if st.button("New Game", use_container_width=True):
-            reset_game()
-            st.rerun()
-        
+    # New Game button - placed outside the with st.sidebar: block to match Minesweeper exactly
+    if st.sidebar.button("New Game", use_container_width=True):
+        reset_game()
+        st.rerun()
+    
+    with st.sidebar:
         # Replace Change Base button with a dropdown selection
         game_state = st.session_state.missile_command_game
         base_options = []
