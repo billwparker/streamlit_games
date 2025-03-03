@@ -721,8 +721,7 @@ def main():
                                 st.session_state.selected_piece_type = piece_name
             
             # Quick placement options
-            st.markdown("---")
-            st.subheader("Quick Setup")
+            # st.subheader("Quick Setup")
             
             if st.button("Auto-Arrange Remaining Pieces", use_container_width=True):
                 # Auto-arrange remaining pieces
