@@ -184,7 +184,7 @@ with animation_container:
 
 # Generate and display the current animation frame
 frame = generate_animation_frame(600, 100)
-animation_placeholder.image(frame, use_column_width=True)
+animation_placeholder.image(frame, use_container_width=True)
 
 # Main content - stays fixed when animation updates
 st.markdown("""
