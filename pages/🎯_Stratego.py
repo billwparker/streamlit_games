@@ -445,7 +445,6 @@ if 'stratego_game' not in st.session_state:
     st.session_state.last_refresh = time.time()
     st.session_state.show_rules = False
     st.session_state.selected_piece_type = None
-    st.session_state.piece_selection_mode = False  # Track if we're in multi-placement mode
 
 def reset_game():
     # Create empty board
@@ -536,8 +535,9 @@ def handle_cell_click(game_state, row, col):
         if st.session_state.selected_piece_type:
             # Try to place the selected piece
             if game_state.place_piece(st.session_state.selected_piece_type, (row, col)):
-                # Don't clear selection if in piece selection mode - allows placing multiple pieces
-                if not st.session_state.piece_selection_mode:
+                # Default behavior: keep the piece type selected (don't clear selection)
+                # Only clear selection when no more of this piece type is available
+                if game_state.player_pieces_to_place.get(st.session_state.selected_piece_type, 0) <= 0:
                     st.session_state.selected_piece_type = None
                     
                 # If player is done and AI hasn't placed pieces yet, do that now
@@ -675,13 +675,6 @@ def main():
         if game_state.game_phase == "setup":
             st.write("**Phase:** Setup - Place your pieces")
             
-            # Add toggle for piece selection mode
-            st.session_state.piece_selection_mode = st.checkbox(
-                "Keep piece selected after placement",
-                value=st.session_state.piece_selection_mode,
-                help="When enabled, the selected piece type stays selected after placement"
-            )
-            
             # Show remaining pieces to place
             st.subheader("Your Pieces")
             
@@ -731,8 +724,8 @@ def main():
                                 st.session_state.selected_piece_type = piece_name
                                 st.rerun()  # Force rerun to show selection immediately
     
-            # Clear selection button when in piece selection mode
-            if st.session_state.piece_selection_mode and st.session_state.selected_piece_type:
+            # Clear selection button is always available when a piece is selected
+            if st.session_state.selected_piece_type:
                 if st.button("Clear Selection", key="clear_selection", use_container_width=True):
                     st.session_state.selected_piece_type = None
                     st.rerun()
@@ -899,6 +892,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+``` 
 
 
 
