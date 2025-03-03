@@ -680,21 +680,32 @@ def main():
     with st.sidebar:
         st.header("Game Controls")
         
-        # New game button
-        if st.button("🎮 New Game", key="new_game_btn", use_container_width=True):
+        # New Game button - updated to match Minesweeper style
+        if st.button("New Game", use_container_width=True):
             reset_game()
             st.rerun()
         
-        # Change base button
-        if st.button("🔄 Change Base", key="change_base_btn", use_container_width=True):
-            game_state = st.session_state.missile_command_game
-            # Find next active base
-            current = st.session_state.selected_base
-            for i in range(1, len(game_state.bases) + 1):
-                next_base = (current + i) % len(game_state.bases)
-                if game_state.bases[next_base].alive and game_state.bases[next_base].missiles > 0:
-                    st.session_state.selected_base = next_base
-                    break
+        # Replace Change Base button with a dropdown selection
+        game_state = st.session_state.missile_command_game
+        base_options = []
+        for i, base in enumerate(game_state.bases):
+            status = ""
+            if not base.alive:
+                status = " (Destroyed)"
+            elif base.missiles <= 0:
+                status = " (No missiles)"
+            base_options.append(f"Base {i+1}{status}")
+        
+        selected_base_index = st.selectbox(
+            "Select Base:",
+            range(len(base_options)),
+            format_func=lambda i: base_options[i],
+            index=st.session_state.selected_base
+        )
+        
+        # Update the selected base if changed
+        if selected_base_index != st.session_state.selected_base:
+            st.session_state.selected_base = selected_base_index
             st.rerun()
         
         # Game stats
