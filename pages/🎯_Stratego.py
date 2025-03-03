@@ -640,7 +640,6 @@ def render_move_history(game_state):
                         st.error(result_markdown)
 
 def main():
-    st.title("🎯 Stratego")
     
     # Initialize last_action if needed
     if 'last_action' not in st.session_state:
