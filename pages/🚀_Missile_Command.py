@@ -239,7 +239,7 @@ class GameState:
     cities: List[City] = field(default_factory=list)
     bases: List[Base] = field(default_factory=list)
     player_missiles: List[Missile] = field(default_factory=list)
-    enemy_missiles: List[Missile] = field(default_factory.list)
+    enemy_missiles: List[Missile] = field(default_factory=list)
     explosions: List[Explosion] = field(default_factory=list)
     last_enemy_spawn: float = 0
     enemy_spawn_interval: float = ENEMY_SPAWN_INTERVAL_BASE
