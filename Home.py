@@ -54,7 +54,7 @@ st.markdown("""
 
 # Lower the refresh rate for smoother animation with less flashing
 from streamlit_autorefresh import st_autorefresh
-count = st_autorefresh(interval=500, limit=None, key="home_autorefresh") # Slower refresh (500ms)
+count = st_autorefresh(interval=300, limit=None, key="home_autorefresh") # Faster refresh (300ms)
 
 # Initialize session state for animation
 if "position_x" not in st.session_state:
@@ -75,12 +75,12 @@ def generate_animation_frame(width, height):
     cycle = st.session_state.cycle
     
     # Update position for next frame
-    position_x += 3
+    position_x += 6  # Faster movement (increased from 3 to 6)
     if position_x > width + 50:
         position_x = -50
     
     # Increment animation cycle
-    cycle = (cycle + 1) % 20
+    cycle = (cycle + 1) % 15  # Faster cycle (decreased from 20 to 15)
     
     # Save updated state
     st.session_state.position_x = position_x
@@ -130,8 +130,8 @@ def generate_animation_frame(width, height):
     draw.line([(head_x, head_y + head_radius), (head_x, body_end_y)], 
               fill=(30, 30, 30), width=2)
     
-    # Draw arms with animation
-    arm_angle = math.sin(cycle * 0.3) * 0.5
+    # Draw arms with animation - faster arm movements
+    arm_angle = math.sin(cycle * 0.4) * 0.7  # Increased amplitude and frequency
     arm_length = 20
     
     # Left arm
@@ -146,9 +146,9 @@ def generate_animation_frame(width, height):
     draw.line([(head_x, head_y + head_radius + 10), (right_arm_x, right_arm_y)], 
               fill=(30, 30, 30), width=2)
     
-    # Draw legs with animation
+    # Draw legs with animation - faster leg movements
     leg_length = 25
-    leg_angle = math.sin(cycle * 0.3) * 0.4
+    leg_angle = math.sin(cycle * 0.4) * 0.6  # Increased amplitude and frequency
     
     # Left leg
     left_leg_x = int(head_x - math.sin(leg_angle) * leg_length)
