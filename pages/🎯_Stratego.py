@@ -541,7 +541,10 @@ def render_board(game_state):
                             st.rerun()
                 else:
                     # On click, select the piece or move to this position
-                    help_text = piece_info if piece_info else f"Row {row+1}, Column {chr(65+col)}"  # A1, B2, etc.
+                    # help_text = piece_info if piece_info else f"Row {row+1}, Column {chr(65+col)}"  # A1, B2, etc.
+                    
+                    help_text = piece_info if piece_info else ""  
+                    
                     if cols[col + 1].button(cell, key=button_key,  # +1 because of the row number column
                                        use_container_width=True, 
                                        help=help_text):
