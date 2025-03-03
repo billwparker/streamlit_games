@@ -1,5 +1,5 @@
 import streamlit as st
-import numpy as np
+import numpy import np
 import random
 import time
 from dataclasses import dataclass
@@ -480,10 +480,14 @@ def render_board(game_state):
                     piece_info = "Water - Cannot pass through"
             
             # Handle fog of war - show opponent pieces as unknown unless revealed
+            # Modified to always show AI pieces as unknown regardless of battle outcome
             if game_state.game_phase == "play" and cell != "⬜" and cell != "🌊":
-                if piece and piece.player == 2 and (row, col) not in game_state.revealed_pieces:
-                    cell = "🔍"  # Show unknown piece for opponent
-                    piece_info = "Unknown opponent piece"
+                if piece and piece.player == 2:
+                    # Always show AI pieces as unknown to maintain fog of war
+                    # Only exception is if explicitly revealed through battle
+                    if (row, col) not in game_state.revealed_pieces:
+                        cell = "🔍"  # Show unknown piece for opponent
+                        piece_info = "Unknown opponent piece"
             
             # Highlight selected piece
             if game_state.selected_piece_pos == (row, col):
@@ -603,6 +607,7 @@ def render_move_history(game_state):
             from_str = format_position(from_pos)
             to_str = format_position(to_pos)
             
+            # Don't reveal AI piece name
             st.info(f"**AI last move:** {from_str} to {to_str}")
     
     # Display recent battles (limit to last 5)
@@ -622,25 +627,37 @@ def render_move_history(game_state):
                 attacker_name = "Your" if attacker["player"] == 1 else "AI"
                 defender_name = "Your" if defender["player"] == 1 else "AI"
                 
-                # Create a rich battle description
+                # Create a rich battle description that respects fog of war
                 if winner == "attacker":
-                    result_markdown = (
-                        f"{attacker_name} {attacker['emoji']} **{attacker['piece']}** "
-                        f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
-                    )
-                    if attacker["player"] == 1:
-                        st.success(result_markdown)
-                    else:
+                    # If AI attacks and wins, hide its piece identity
+                    if attacker["player"] == 2:
+                        result_markdown = (
+                            f"AI 🔍 **Unknown Piece** "
+                            f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
+                        )
                         st.error(result_markdown)
+                    else:
+                        # Player attacker - show full info
+                        result_markdown = (
+                            f"{attacker_name} {attacker['emoji']} **{attacker['piece']}** "
+                            f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
+                        )
+                        st.success(result_markdown)
                 else:
-                    result_markdown = (
-                        f"{defender_name} {defender['emoji']} **{defender['piece']}** "
-                        f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
-                    )
-                    if defender["player"] == 1:
-                        st.success(result_markdown)
-                    else:
+                    # If AI defends and wins, hide its piece identity
+                    if defender["player"] == 2:
+                        result_markdown = (
+                            f"AI 🔍 **Unknown Piece** "
+                            f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
+                        )
                         st.error(result_markdown)
+                    else:
+                        # Player defender - show full info
+                        result_markdown = (
+                            f"{defender_name} {defender['emoji']} **{defender['piece']}** "
+                            f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
+                        )
+                        st.success(result_markdown)
 
 def main():
     
