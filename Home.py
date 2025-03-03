@@ -222,7 +222,7 @@ typically associated with a given style simply to disrupt conventional aesthetic
 to invite viewers to re-examine their expectations.
 
 Similarly, this project is a form of what we are calling "Transgressive Gaming" to
-demonstrate how to build interactive games in a minimalistic and in a almost anti-UX
+demonstrate how to build interactive games in a minimalistic and in an almost anti-UX
 pattern.
 
 Each game here explores different techniques from ASCII to Emojis and sometimes PyGame 
