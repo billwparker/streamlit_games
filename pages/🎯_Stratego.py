@@ -670,13 +670,11 @@ def main():
     
     # Sidebar with game controls and piece selection (for setup phase)
     with st.sidebar:
-        st.header("Game Info")
         
         if game_state.game_phase == "setup":
-            st.write("**Phase:** Setup - Place your pieces")
             
             # Show remaining pieces to place
-            st.subheader("Your Pieces")
+            st.subheader("Place Your Pieces")
             
             # Grid of piece types for selection
             piece_cols = 3
