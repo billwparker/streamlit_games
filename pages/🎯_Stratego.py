@@ -601,13 +601,12 @@ def render_move_history(game_state):
     if game_state.last_move and game_state.last_move.get("player") == 2:
         from_pos = game_state.last_move.get("from")
         to_pos = game_state.last_move.get("to")
-        piece_name = game_state.last_move.get("piece")
         
-        if from_pos and to_pos and piece_name:
+        if from_pos and to_pos:
             from_str = format_position(from_pos)
             to_str = format_position(to_pos)
             
-            # Don't reveal AI piece name
+            # Don't reveal AI piece name in general movement
             st.info(f"**AI last move:** {from_str} to {to_str}")
     
     # Display recent battles (limit to last 5)
@@ -627,37 +626,25 @@ def render_move_history(game_state):
                 attacker_name = "Your" if attacker["player"] == 1 else "AI"
                 defender_name = "Your" if defender["player"] == 1 else "AI"
                 
-                # Create a rich battle description that respects fog of war
+                # Create a rich battle description - show actual pieces in battle reports
                 if winner == "attacker":
-                    # If AI attacks and wins, hide its piece identity
-                    if attacker["player"] == 2:
-                        result_markdown = (
-                            f"AI 🔍 **Unknown Piece** "
-                            f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
-                        )
-                        st.error(result_markdown)
-                    else:
-                        # Player attacker - show full info
-                        result_markdown = (
-                            f"{attacker_name} {attacker['emoji']} **{attacker['piece']}** "
-                            f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
-                        )
+                    result_markdown = (
+                        f"{attacker_name} {attacker['emoji']} **{attacker['piece']}** "
+                        f"defeated {defender_name} {defender['emoji']} **{defender['piece']}**"
+                    )
+                    if attacker["player"] == 1:
                         st.success(result_markdown)
+                    else:
+                        st.error(result_markdown)
                 else:
-                    # If AI defends and wins, hide its piece identity
-                    if defender["player"] == 2:
-                        result_markdown = (
-                            f"AI 🔍 **Unknown Piece** "
-                            f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
-                        )
-                        st.error(result_markdown)
-                    else:
-                        # Player defender - show full info
-                        result_markdown = (
-                            f"{defender_name} {defender['emoji']} **{defender['piece']}** "
-                            f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
-                        )
+                    result_markdown = (
+                        f"{defender_name} {defender['emoji']} **{defender['piece']}** "
+                        f"defeated {attacker_name} {attacker['emoji']} **{attacker['piece']}**"
+                    )
+                    if defender["player"] == 1:
                         st.success(result_markdown)
+                    else:
+                        st.error(result_markdown)
 
 def main():
     
