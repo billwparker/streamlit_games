@@ -49,6 +49,29 @@ st.markdown("""
         height: 100px;
         overflow: hidden;
     }
+    
+    /* Reduce space between elements */
+    h1 {
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Reduce spacing around containers */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Tighten up spacing between elements */
+    .stMarkdown {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Create more compact layout */
+    div[data-testid="stVerticalBlock"] > div {
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -172,13 +195,14 @@ def generate_animation_frame(width, height):
     
     return img
 
-# First, create a container for the title to prevent it from moving
-st.markdown('<h1>🎮 Welcome to Streamlit Games</h1>', unsafe_allow_html=True)
+# First, create a container for the title to prevent it from moving - reduce margins
+st.markdown('<h1 style="margin-bottom:0">🎮 Welcome to Streamlit Games</h1>', unsafe_allow_html=True)
 
-# Create a placeholder for our animation
+# Create a placeholder for our animation - use a compact layout
 animation_container = st.container()
 with animation_container:
-    st.markdown('<div class="animation-container">', unsafe_allow_html=True)
+    # Removed extra margin around animation container
+    st.markdown('<div class="animation-container" style="margin-top:-200px">', unsafe_allow_html=True)
     animation_placeholder = st.empty()
     st.markdown('</div>', unsafe_allow_html=True)
 
