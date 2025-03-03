@@ -445,6 +445,7 @@ if 'stratego_game' not in st.session_state:
     st.session_state.last_refresh = time.time()
     st.session_state.show_rules = False
     st.session_state.selected_piece_type = None
+    st.session_state.piece_selection_mode = False  # Track if we're in multi-placement mode
 
 def reset_game():
     # Create empty board
@@ -535,8 +536,10 @@ def handle_cell_click(game_state, row, col):
         if st.session_state.selected_piece_type:
             # Try to place the selected piece
             if game_state.place_piece(st.session_state.selected_piece_type, (row, col)):
-                st.session_state.selected_piece_type = None
-                
+                # Don't clear selection if in piece selection mode - allows placing multiple pieces
+                if not st.session_state.piece_selection_mode:
+                    st.session_state.selected_piece_type = None
+                    
                 # If player is done and AI hasn't placed pieces yet, do that now
                 if (sum(game_state.player_pieces_to_place.values()) == 0 and 
                     not game_state.ai_pieces_placed):
@@ -672,6 +675,13 @@ def main():
         if game_state.game_phase == "setup":
             st.write("**Phase:** Setup - Place your pieces")
             
+            # Add toggle for piece selection mode
+            st.session_state.piece_selection_mode = st.checkbox(
+                "Keep piece selected after placement",
+                value=st.session_state.piece_selection_mode,
+                help="When enabled, the selected piece type stays selected after placement"
+            )
+            
             # Show remaining pieces to place
             st.subheader("Your Pieces")
             
@@ -719,9 +729,15 @@ def main():
                                              key=f"select_{piece_name}", 
                                              help=f"{piece_name} {rank_info}"):
                                 st.session_state.selected_piece_type = piece_name
+                                st.rerun()  # Force rerun to show selection immediately
+    
+            # Clear selection button when in piece selection mode
+            if st.session_state.piece_selection_mode and st.session_state.selected_piece_type:
+                if st.button("Clear Selection", key="clear_selection", use_container_width=True):
+                    st.session_state.selected_piece_type = None
+                    st.rerun()
             
             # Quick placement options
-            # st.subheader("Quick Setup")
             
             if st.button("Auto-Arrange Remaining Pieces", use_container_width=True):
                 # Auto-arrange remaining pieces
