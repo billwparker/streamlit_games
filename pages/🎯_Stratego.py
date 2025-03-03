@@ -492,6 +492,10 @@ def render_board(game_state):
                 elif piece.player == 0:  # Water
                     piece_info = "Water - Cannot pass through"
             
+            # Set tooltip for water cells to show "Water" instead of coordinates
+            if cell == "🌊":
+                piece_info = "Water - Cannot pass through"
+            
             # Handle fog of war for AI pieces (always show as unknown)
             if game_state.game_phase == "play" and cell != "⬜" and cell != "🌊":
                 if piece and piece.player == 2:
@@ -663,14 +667,6 @@ def main():
     if 'last_action' not in st.session_state:
         st.session_state.last_action = None
     
-    # Add New Game button prominently at the top
-    col1, col2 = st.columns([3, 1])
-    with col2:
-        if st.button("🔄 New Game", key="top_new_game", use_container_width=True):
-            reset_game()
-            st.session_state.last_action = "new_game"
-            st.rerun()
-    
     game_state = st.session_state.stratego_game
     
     # AI move logic
@@ -685,6 +681,11 @@ def main():
     
     # Sidebar with game controls and piece selection (for setup phase)
     with st.sidebar:
+        # Add New Game button to sidebar
+        if st.button("🔄 New Game", key="sidebar_new_game", use_container_width=True):
+            reset_game()
+            st.session_state.last_action = "new_game"
+            st.rerun()
         
         if game_state.game_phase == "setup":
             
@@ -876,7 +877,7 @@ def main():
             - Equal ranks both get eliminated
             """)
     
-    # Main board area
+    # Main board area - removed the New Game button from here
     game_container, info_container = st.columns([3, 1])
     
     with game_container:

@@ -9,7 +9,6 @@ st.set_page_config(
 st.title("🎮 Welcome to Streamlit Games")
 
 st.markdown("""
-# Available Games
             
 Select a game from the sidebar to start playing!
 
