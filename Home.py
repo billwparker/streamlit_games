@@ -1,10 +1,10 @@
 import streamlit as st
-import pygame
 import numpy as np
 import io
 from PIL import Image
 import math
 import time
+import os
 
 # Configure the page with wider layout and without scrolling
 st.set_page_config(
@@ -54,139 +54,123 @@ st.markdown("""
 
 # Lower the refresh rate for smoother animation with less flashing
 from streamlit_autorefresh import st_autorefresh
-count = st_autorefresh(interval=100, limit=None, key="home_autorefresh")
+count = st_autorefresh(interval=500, limit=None, key="home_autorefresh") # Slower refresh (500ms)
 
-# Initialize session state for animation - add frame buffer to reduce flashing
+# Initialize session state for animation
 if "position_x" not in st.session_state:
     st.session_state.position_x = -50
     st.session_state.cycle = 0
-    # Generate a fixed background once to avoid regenerating it every frame
-    st.session_state.background = None
-    # Cache the last frame to reduce computation
-    st.session_state.last_frame_time = 0
-    st.session_state.cached_frame = None
-    # Previous scrollY position
-    st.session_state.scroll_pos = 0
+    # Initialize drawing parameters that remain constant
+    st.session_state.frame_counter = 0
 
-# Create a function to generate an animation frame with Pygame
+# Create necessary directories to avoid MediaFileHandler errors
+os.makedirs(os.path.join(os.path.dirname(__file__), "assets", "images"), exist_ok=True)
+os.makedirs(os.path.join(os.path.dirname(__file__), "assets", "audio"), exist_ok=True)
+os.makedirs(os.path.join(os.path.dirname(__file__), "assets", "fonts"), exist_ok=True)
+
+# Create a function to generate an animation frame - avoid importing pygame here
 def generate_animation_frame(width, height):
-    # Use frame caching to reduce CPU usage and flashing
-    current_time = time.time()
-    if (st.session_state.cached_frame is not None and 
-        current_time - st.session_state.last_frame_time < 0.08):  # Only update every ~80ms
-        return st.session_state.cached_frame
-    
     # Get state values
     position_x = st.session_state.position_x
     cycle = st.session_state.cycle
     
     # Update position for next frame
-    position_x += 3  # Slower movement (was 5)
+    position_x += 3
     if position_x > width + 50:
         position_x = -50
     
     # Increment animation cycle
-    cycle = (cycle + 1) % 20  # Slower animation cycle (was 10)
+    cycle = (cycle + 1) % 20
     
     # Save updated state
     st.session_state.position_x = position_x
     st.session_state.cycle = cycle
+    st.session_state.frame_counter += 1
     
-    # Initialize pygame surface
-    surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    # Create an image directly using PIL instead of pygame
+    # This avoids potential pygame initialization issues
+    img = Image.new('RGB', (width, height), (245, 245, 245))  # Light background
     
-    # Generate or reuse background
-    if st.session_state.background is None:
-        # Create a new background
-        background = pygame.Surface((width, height), pygame.SRCALPHA)
-        background.fill((245, 245, 245))  # Light background
-        
-        # Colors
-        BLUE = (0, 70, 190)
-        
-        # Ground line
-        ground_y = height - 20
-        pygame.draw.line(background, (100, 100, 100), (0, ground_y), (width, ground_y), 2)
-        
-        # Draw some background elements for depth
-        # Trees or buildings in the distance - use fixed positions
-        building_positions = [width * 0.1, width * 0.3, width * 0.5, width * 0.7, width * 0.9]
-        building_heights = [40, 50, 35, 55, 45]  # Fixed heights to prevent flicker
-        
-        for i, x_pos in enumerate(building_positions):
-            height_var = building_heights[i % len(building_heights)]
-            pygame.draw.rect(background, BLUE, (x_pos - 15, ground_y - height_var, 30, height_var))
-        
-        st.session_state.background = background
+    # Draw using PIL's ImageDraw
+    from PIL import ImageDraw
     
-    # Blit the cached background to avoid regenerating it
-    surface.blit(st.session_state.background, (0, 0))
+    draw = ImageDraw.Draw(img)
     
-    # Rest of drawing code remains the same
-    BLACK = (30, 30, 30)
+    # Draw ground line
     ground_y = height - 20
+    draw.line([(0, ground_y), (width, ground_y)], fill=(100, 100, 100), width=2)
     
-    # Draw stick figure at the current position
+    # Draw background elements - buildings
+    building_positions = [width * 0.1, width * 0.3, width * 0.5, width * 0.7, width * 0.9]
+    building_heights = [40, 50, 35, 55, 45]  # Fixed heights
+    
+    for i, x_pos in enumerate(building_positions):
+        x_pos = int(x_pos)
+        height_var = building_heights[i % len(building_heights)]
+        draw.rectangle(
+            [(x_pos - 15, ground_y - height_var), (x_pos + 15, ground_y)],
+            fill=(0, 70, 190)
+        )
+    
+    # Drawing the stick figure
     head_radius = 15
-    head_x = position_x
+    head_x = int(position_x)
     head_y = ground_y - 60
     
-    # Draw head
-    pygame.draw.circle(surface, BLACK, (head_x, head_y), head_radius, 2)
+    # Draw head - circle
+    draw.ellipse(
+        [(head_x - head_radius, head_y - head_radius), 
+         (head_x + head_radius, head_y + head_radius)],
+        outline=(30, 30, 30),
+        width=2
+    )
     
-    # Draw body
+    # Draw body - line
     body_end_y = ground_y - 25
-    pygame.draw.line(surface, BLACK, (head_x, head_y + head_radius), (head_x, body_end_y), 2)
+    draw.line([(head_x, head_y + head_radius), (head_x, body_end_y)], 
+              fill=(30, 30, 30), width=2)
     
-    # Draw arms with animation - smoother movement with adjusted animation speed
-    arm_angle = math.sin(cycle * 0.3) * 0.5  # Slower arm swing
+    # Draw arms with animation
+    arm_angle = math.sin(cycle * 0.3) * 0.5
     arm_length = 20
     
     # Left arm
-    left_arm_x = head_x - math.cos(arm_angle) * arm_length
-    left_arm_y = head_y + head_radius + 10 - math.sin(arm_angle) * arm_length
-    pygame.draw.line(surface, BLACK, (head_x, head_y + head_radius + 10), (left_arm_x, left_arm_y), 2)
+    left_arm_x = int(head_x - math.cos(arm_angle) * arm_length)
+    left_arm_y = int(head_y + head_radius + 10 - math.sin(arm_angle) * arm_length)
+    draw.line([(head_x, head_y + head_radius + 10), (left_arm_x, left_arm_y)], 
+              fill=(30, 30, 30), width=2)
     
-    # Right arm (opposite phase)
-    right_arm_x = head_x + math.cos(arm_angle) * arm_length
-    right_arm_y = head_y + head_radius + 10 + math.sin(arm_angle) * arm_length
-    pygame.draw.line(surface, BLACK, (head_x, head_y + head_radius + 10), (right_arm_x, right_arm_y), 2)
+    # Right arm
+    right_arm_x = int(head_x + math.cos(arm_angle) * arm_length)
+    right_arm_y = int(head_y + head_radius + 10 + math.sin(arm_angle) * arm_length)
+    draw.line([(head_x, head_y + head_radius + 10), (right_arm_x, right_arm_y)], 
+              fill=(30, 30, 30), width=2)
     
-    # Draw legs with animation - smoother movement
+    # Draw legs with animation
     leg_length = 25
-    leg_angle = math.sin(cycle * 0.3) * 0.4  # Slower leg swing
+    leg_angle = math.sin(cycle * 0.3) * 0.4
     
     # Left leg
-    left_leg_x = head_x - math.sin(leg_angle) * leg_length
+    left_leg_x = int(head_x - math.sin(leg_angle) * leg_length)
     left_leg_y = ground_y
-    pygame.draw.line(surface, BLACK, (head_x, body_end_y), (left_leg_x, left_leg_y), 2)
+    draw.line([(head_x, body_end_y), (left_leg_x, left_leg_y)], 
+              fill=(30, 30, 30), width=2)
     
-    # Right leg (opposite phase)
-    right_leg_x = head_x + math.sin(leg_angle) * leg_length
+    # Right leg
+    right_leg_x = int(head_x + math.sin(leg_angle) * leg_length)
     right_leg_y = ground_y
-    pygame.draw.line(surface, BLACK, (head_x, body_end_y), (right_leg_x, right_leg_y), 2)
+    draw.line([(head_x, body_end_y), (right_leg_x, right_leg_y)], 
+              fill=(30, 30, 30), width=2)
     
-    # Draw a small shadow
-    shadow_width = 20 + abs(math.sin(cycle * 0.3) * 8)  # Shadow width changes with step
-    ellipse_rect = pygame.Rect(head_x - shadow_width/2, ground_y - 4, shadow_width, 8)
-    pygame.draw.ellipse(surface, (200, 200, 200), ellipse_rect)
-    
-    # Convert the pygame surface to a PIL Image
-    img_data = pygame.image.tostring(surface, 'RGBA')
-    img = Image.frombytes('RGBA', (width, height), img_data)
-    
-    # Cache the frame
-    st.session_state.cached_frame = img
-    st.session_state.last_frame_time = current_time
+    # Draw shadow - ellipse
+    shadow_width = 20 + abs(math.sin(cycle * 0.3) * 8)
+    draw.ellipse(
+        [(head_x - shadow_width/2, ground_y - 4), 
+         (head_x + shadow_width/2, ground_y + 4)],
+        fill=(200, 200, 200)
+    )
     
     return img
-
-# Initialize pygame for drawing
-pygame.init()
-
-# Animation settings
-WIDTH = 600
-HEIGHT = 100
 
 # First, create a container for the title to prevent it from moving
 st.markdown('<h1>🎮 Welcome to Streamlit Games</h1>', unsafe_allow_html=True)
@@ -199,13 +183,16 @@ with animation_container:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Generate and display the current animation frame
-frame = generate_animation_frame(WIDTH, HEIGHT)
-animation_placeholder.image(frame, use_container_width=True)
+frame = generate_animation_frame(600, 100)
+animation_placeholder.image(frame, use_column_width=True)
 
 # Main content - stays fixed when animation updates
 st.markdown("""
+Select a game from the sidebar to start playing!
 
 This project demonstrates how to build interactive games using Streamlit.
+Each game explores different techniques for creating interactive experiences
+within the Streamlit framework.
 """)
 
 # Add JavaScript to maintain scroll position
