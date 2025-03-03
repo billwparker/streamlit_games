@@ -196,7 +196,7 @@ def generate_animation_frame(width, height):
     return img
 
 # First, create a container for the title to prevent it from moving - reduce margins
-st.markdown('<h1 style="margin-bottom:0">🎮 Welcome to Streamlit Games</h1>', unsafe_allow_html=True)
+st.markdown('<h1 style="margin-bottom:0">🎮 Welcome to Transgressive Games</h1>', unsafe_allow_html=True)
 
 # Create a placeholder for our animation - use a compact layout
 animation_container = st.container()
@@ -212,11 +212,19 @@ animation_placeholder.image(frame, use_container_width=True)
 
 # Main content - stays fixed when animation updates
 st.markdown("""
-Select a game from the sidebar to start playing!
 
-This project demonstrates how to build interactive games using Streamlit.
-Each game explores different techniques for creating interactive experiences
-within the Streamlit framework.
+Transgressive art intentionally pushes boundaries to provoke a reaction, spark 
+dialogue, and sometimes inspire change. This is commonly seen in works that 
+address political, religious, or social themes where the medium and subject 
+matter combine to challenge the status quo. But it can also be to use a medium not
+typically associated with a given style simply to disrupt conventional aesthetics or 
+to invite viewers to re-examine their expectations.
+
+Similarly, this project is a form of what we are calling "Transgressive Gaming" to
+demonstrate how to build interactive games in a minimalistic games using Streamlit.
+
+Each game explores different techniques from ASCII to Emojis and sometimes PyGame 
+for creating interactive experiences within the Streamlit framework.
 """)
 
 # Add JavaScript to maintain scroll position
