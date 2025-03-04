@@ -203,6 +203,11 @@ if 'minesweeper_game' not in st.session_state:
     st.session_state.difficulty = "beginner"  # Default difficulty
     st.session_state.last_refresh_time = time.time()
     st.session_state.show_rules = False  # Default rules visibility
+    st.session_state.game_started = False  # Track if game has been started
+
+# Ensure game_started is always initialized
+if 'game_started' not in st.session_state:
+    st.session_state.game_started = False
 
 def create_new_game(difficulty):
     """Create a new game with the specified difficulty"""
@@ -215,6 +220,7 @@ def create_new_game(difficulty):
     
     st.session_state.minesweeper_game = MinesweeperGame(**config)
     st.session_state.difficulty = difficulty
+    st.session_state.game_started = True  # Mark game as started
 
 def render_cell(col, row_idx, col_idx, game: MinesweeperGame):
     """Render a single cell in the game grid"""
@@ -290,19 +296,59 @@ def main():
         f"{EMOJI_DISPLAY['hidden']} {EMOJI_DISPLAY['flag']} {EMOJI_DISPLAY['1']} {EMOJI_DISPLAY['mine']}"
     )
     
-    # Difficulty selection - changed to vertical layout (horizontal=False)
-    difficulty = st.sidebar.radio(
+    # Change difficulty selection to dropdown
+    difficulty = st.sidebar.selectbox(
         "Difficulty:",
         ["Beginner", "Intermediate", "Expert"],
-        index=["beginner", "intermediate", "expert"].index(st.session_state.difficulty),
-        horizontal=False
+        index=["beginner", "intermediate", "expert"].index(st.session_state.difficulty)
     )
     
     # New game button
     if st.sidebar.button("New Game", use_container_width=True):
         create_new_game(difficulty.lower())
     
-    # Initialize game if needed
+    # Add checkbox for shift key to sidebar
+    st.sidebar.checkbox("Enable Flagging Mode", key="shift_pressed")
+    
+    # Add Rules to the sidebar
+    st.sidebar.markdown("---")
+    show_rules = st.sidebar.checkbox("Show Rules", value=st.session_state.show_rules)
+    st.session_state.show_rules = show_rules
+    
+    if show_rules:
+        st.sidebar.markdown("""
+        ### Rules
+        1. The goal is to reveal all cells without mines.
+        2. Numbers show how many mines are adjacent to that cell.
+        3. Use flags to mark cells you think contain mines.
+        4. If you reveal a mine, the game is over!
+        
+        ### Strategy Tips
+        - Start by clicking in the middle of the board.
+        - If you reveal a "0" cell, all adjacent cells will be revealed automatically.
+        - Use the chord action (click on a number) to quickly reveal adjacent cells when all mines are flagged.
+        """)
+    
+    # Start Game button when game hasn't been started yet
+    if not st.session_state.game_started:
+        st.markdown("### Welcome to Minesweeper!")
+        st.markdown("Select your difficulty in the sidebar and press Start Game to begin.")
+        
+        if st.button("Start Game", use_container_width=True):
+            create_new_game(difficulty.lower())
+            st.rerun()
+        
+        # Show preview image or instructions before game starts
+        st.markdown("---")
+        st.markdown("### How to Play")
+        st.markdown("""
+        - Left-click to reveal a cell
+        - Enable flagging mode in the sidebar to mark potential mines
+        - Click on revealed numbers to clear adjacent cells when mines are flagged
+        """)
+        return  # Exit early, don't show the game board yet
+    
+    # Initialize game if needed (should only happen first time or after page refresh)
     if st.session_state.minesweeper_game is None:
         create_new_game(difficulty.lower())
     
@@ -333,12 +379,9 @@ def main():
         st.write(f"Flags Placed: {np.sum(game.flagged)}/{game.mines}")
         st.write(f"Cells Revealed: {np.sum(game.revealed)}/{game.rows * game.cols}")
     
-    # Add checkbox for shift key
-    shift_col1, shift_col2 = st.columns([1, 10])
-    with shift_col1:
-        st.checkbox("Shift", key="shift_pressed", label_visibility="collapsed")
-    with shift_col2:
-        st.markdown("👈 Check this box to enable flagging mode")
+    # Reminder about flagging mode
+    if st.session_state.get('shift_pressed', False):
+        st.info("🚩 Flagging mode is enabled")
     
     # Create container for the game grid
     game_container = st.container()
@@ -350,25 +393,6 @@ def main():
             cols = st.columns(game.cols)
             for col_idx, col in enumerate(cols):
                 render_cell(col, row_idx, col_idx, game)
-    
-    # Add Rules to the sidebar bottom
-    st.sidebar.markdown("---")
-    show_rules = st.sidebar.checkbox("Show Rules", value=st.session_state.show_rules)
-    st.session_state.show_rules = show_rules
-    
-    if show_rules:
-        st.sidebar.markdown("""
-        ### Rules
-        1. The goal is to reveal all cells without mines.
-        2. Numbers show how many mines are adjacent to that cell.
-        3. Use flags to mark cells you think contain mines.
-        4. If you reveal a mine, the game is over!
-        
-        ### Strategy Tips
-        - Start by clicking in the middle of the board.
-        - If you reveal a "0" cell, all adjacent cells will be revealed automatically.
-        - Use the chord action (click on a number) to quickly reveal adjacent cells when all mines are flagged.
-        """)
     
     # Handle autorefresh logic
     st.session_state.last_refresh_time = current_time

@@ -65,11 +65,11 @@ st.markdown("""
     .stButton button {
         height: 45px;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        /* align-items: center; */
+        /*justify-content: center;*/
         padding: 0 !important;
-        background-color: transparent;
-        border: none;
+        /*background-color: transparent;
+        border: none;*/
         transition: transform 0.1s;
     }
     
@@ -79,8 +79,8 @@ st.markdown("""
     
     /* Make emoji bigger in buttons */
     .stButton button p {
-        font-size: 1.5rem;
-        margin: 0;
+        /*font-size: 1.5rem;
+        margin: 0;*/
     }
     
     /* Game grid container */
@@ -348,6 +348,7 @@ def reset_game():
     st.session_state.selected_base = 1  # Middle base selected by default
     st.session_state.high_score = max(st.session_state.get('high_score', 0), 
                                     st.session_state.missile_command_game.score)
+    st.session_state.game_started = True  # Ensure game is started after reset
 
 def spawn_enemy_missile(game_state: GameState):
     """Spawn a new enemy missile with different types based on level"""
@@ -673,12 +674,14 @@ if 'missile_command_game' not in st.session_state:
     st.session_state.game_start_time = time.time()
     st.session_state.selected_base = 1  # Middle base selected by default
     st.session_state.high_score = 0
+    st.session_state.game_started = False  # Track if game has been started
+
+# Ensure game_started is always initialized
+if 'game_started' not in st.session_state:
+    st.session_state.game_started = False
 
 # In your main() function, modify the header to be more compact:
 def main():    
-    # Sidebar for controls
-    with st.sidebar:
-        st.header("Game Controls")
         
     # New Game button - placed outside the with st.sidebar: block to match Minesweeper exactly
     if st.sidebar.button("New Game", use_container_width=True):
@@ -713,37 +716,39 @@ def main():
         st.markdown("---")
         st.markdown("### Game Status")
         
-        game_state = st.session_state.missile_command_game
-        
-        # Show score with fancy styling
-        st.markdown(f'<p class="score-display">Score: {game_state.score}</p>', unsafe_allow_html=True)
-        st.markdown(f"**Level:** {game_state.level}")
+        # Show high score in sidebar regardless of game state
         st.markdown(f"**High Score:** {st.session_state.high_score}")
         
-        # City status
-        cities_alive = sum(1 for city in game_state.cities if city.alive)
-        st.markdown(f"**Cities:** {cities_alive}/{len(game_state.cities)}")
-        
-        # Missile count
-        total_missiles = 0
-        for i, base in enumerate(game_state.bases):
-            if base.alive:
-                label = "**" if i == st.session_state.selected_base else ""
-                st.markdown(f"{label}Base {i+1}: {base.missiles} missiles{label}")
-                total_missiles += base.missiles
-        
-        st.markdown(f"**Total Missiles:** {total_missiles}")
-        
-        # Show combo counter if active
-        if game_state.combo_count >= 3:
-            st.success(f"**Combo: x{game_state.combo_count}!**")
-        
-        # Show power-up if active
-        if game_state.power_up_active:
-            power_up_name = game_state.power_up_type.replace('_', ' ').title()
-            st.info(f"**Power-up: {power_up_name}!**")
-            remaining = max(0, int(game_state.power_up_end_time - time.time()))
-            st.progress(remaining / 30)  # Assuming 30 second duration
+        # Only show detailed game stats if game has started
+        if st.session_state.game_started:
+            # Show score with fancy styling
+            st.markdown(f'<p class="score-display">Score: {game_state.score}</p>', unsafe_allow_html=True)
+            st.markdown(f"**Level:** {game_state.level}")
+            
+            # City status
+            cities_alive = sum(1 for city in game_state.cities if city.alive)
+            st.markdown(f"**Cities:** {cities_alive}/{len(game_state.cities)}")
+            
+            # Missile count
+            total_missiles = 0
+            for i, base in enumerate(game_state.bases):
+                if base.alive:
+                    label = "**" if i == st.session_state.selected_base else ""
+                    st.markdown(f"{label}Base {i+1}: {base.missiles} missiles{label}")
+                    total_missiles += base.missiles
+            
+            st.markdown(f"**Total Missiles:** {total_missiles}")
+            
+            # Show combo counter if active
+            if game_state.combo_count >= 3:
+                st.success(f"**Combo: x{game_state.combo_count}!**")
+            
+            # Show power-up if active
+            if game_state.power_up_active:
+                power_up_name = game_state.power_up_type.replace('_', ' ').title()
+                st.info(f"**Power-up: {power_up_name}!**")
+                remaining = max(0, int(game_state.power_up_end_time - time.time()))
+                st.progress(remaining / 30)  # Assuming 30 second duration
         
         # Game instructions
         st.markdown("---")
@@ -751,7 +756,7 @@ def main():
             st.markdown("""
             1. Click on the game grid to fire missiles
             2. Defend your cities (🏙️) from enemy missiles (💣)
-            3. Use the **Change Base** button to switch launch sites (🚀)
+            3. Use the Select Base dropdown to switch launch sites (🚀)
             4. Each missile base has a limited missile supply
             5. Advance to the next level by destroying all enemy missiles
             
@@ -782,7 +787,45 @@ def main():
     # Get game state
     game_state = st.session_state.missile_command_game
     
-    # Update game state
+    # Start Game button when game hasn't been started yet
+    if not st.session_state.game_started:
+        st.markdown("## 🚀 Missile Command")
+        st.markdown("### Welcome to Missile Command!")
+        st.markdown("Defend your cities from incoming missiles. Click the Start Game button to begin.")
+        
+        if st.button("Start Game", use_container_width=True):
+            st.session_state.game_started = True
+            reset_game()  # Initialize a fresh game
+            st.rerun()
+        
+        # Show preview image or instructions before game starts
+        st.markdown("---")
+        st.markdown("### How to Play")
+        st.markdown("""
+        - Click on the sky to fire defensive missiles
+        - Protect your cities (🏙️) from incoming enemy missiles (💣)
+        - Each hit on an enemy missile earns points
+        - The game ends when all cities are destroyed
+        """)
+        
+        # Show a game preview or splash screen
+        st.markdown("---")
+        st.markdown("### Game Preview")
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col2:
+            st.markdown("""
+            <div style="text-align:center; background-color:#111827; padding:20px; border-radius:10px;">
+                <h2 style="color:#00BFFF;">Missile Command</h2>
+                <p style="font-size:24px;">🏙️ 🏙️ 🏙️ 🏙️</p>
+                <p style="font-size:24px;">💣 ⚡ 💣 🧨</p>
+                <p style="font-size:24px;">⤴️ 💥 ✨</p>
+                <p style="font-size:24px;">🚀 🏙️ 🏙️ 🚀</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        return  # Exit early, don't show the actual game yet
+    
+    # Only update the game if it has been started
     update_game(game_state)
     
     # Create a more compact header
@@ -827,6 +870,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
