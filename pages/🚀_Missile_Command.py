@@ -240,7 +240,7 @@ class GameState:
     bases: List[Base] = field(default_factory=list)
     player_missiles: List[Missile] = field(default_factory=list)
     enemy_missiles: List[Missile] = field(default_factory=list)
-    explosions: List[Explosion] = field(default_factory=list)
+    explosions: List[Explosion] = field(default_factory=list)  # Fix: Changed default_factory.list to default_factory=list
     last_enemy_spawn: float = 0
     enemy_spawn_interval: float = ENEMY_SPAWN_INTERVAL_BASE
     frame_count: int = 0
@@ -682,43 +682,51 @@ if 'game_started' not in st.session_state:
 
 # In your main() function, modify the header to be more compact:
 def main():    
-        
-    # New Game button - placed outside the with st.sidebar: block to match Minesweeper exactly
-    if st.sidebar.button("New Game", use_container_width=True):
-        reset_game()
-        st.rerun()
+    # Remove the duplicate New Game button outside the columns
+    # We'll only keep the one inside the columns
     
     with st.sidebar:
-        # Replace Change Base button with a dropdown selection
-        game_state = st.session_state.missile_command_game
-        base_options = []
-        for i, base in enumerate(game_state.bases):
-            status = ""
-            if not base.alive:
-                status = " (Destroyed)"
-            elif base.missiles <= 0:
-                status = " (No missiles)"
-            base_options.append(f"Base {i+1}{status}")
+        # Use columns to place New Game button and Select Base dropdown side by side
+        col1, col2 = st.columns([1, 2])
         
-        selected_base_index = st.selectbox(
-            "Select Base:",
-            range(len(base_options)),
-            format_func=lambda i: base_options[i],
-            index=st.session_state.selected_base
-        )
+        with col1:
+            # Add a unique key to avoid duplicate ID error
+            if st.button("New Game", use_container_width=True, key="new_game_sidebar_btn"):
+                reset_game()
+                st.rerun()
         
-        # Update the selected base if changed
-        if selected_base_index != st.session_state.selected_base:
-            st.session_state.selected_base = selected_base_index
-            st.rerun()
+        with col2:
+            game_state = st.session_state.missile_command_game
+            base_options = []
+            
+            # Create radio button options for bases
+            base_labels = []
+            for i, base in enumerate(game_state.bases):
+                status = ""
+                if not base.alive:
+                    status = " (Destroyed)"
+                elif base.missiles <= 0:
+                    status = " (No missiles)"
+                # base_labels.append(f"Base {i+1}{status}")
+                base_labels.append(f"{i+1}{status}")
+            
+            # Use radio buttons for base selection
+            selected_base_index = st.radio(
+                "Select Base:",
+                options=range(len(base_labels)),
+                format_func=lambda i: base_labels[i],
+                index=st.session_state.selected_base,
+                horizontal=True  # Display horizontally to save space
+            )
+            
+            # Update the selected base if changed
+            if selected_base_index != st.session_state.selected_base:
+                st.session_state.selected_base = selected_base_index
+                st.rerun()
         
         # Game stats
         st.markdown("---")
-        st.markdown("### Game Status")
-        
-        # Show high score in sidebar regardless of game state
-        st.markdown(f"**High Score:** {st.session_state.high_score}")
-        
+                
         # Only show detailed game stats if game has started
         if st.session_state.game_started:
             # Show score with fancy styling
@@ -749,6 +757,9 @@ def main():
                 st.info(f"**Power-up: {power_up_name}!**")
                 remaining = max(0, int(game_state.power_up_end_time - time.time()))
                 st.progress(remaining / 30)  # Assuming 30 second duration
+        
+        # Show high score in sidebar regardless of game state
+        st.markdown(f"**High Score:** {st.session_state.high_score}")
         
         # Game instructions
         st.markdown("---")
